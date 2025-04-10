@@ -1,10 +1,11 @@
 import string
 import sqlite3
 import json
+import os
 
 class RecipeDatabaseHandler:
     def __init__(self):
-        self.db_path = "recipes_s3.db"
+        self.db_path = os.getenv('RECIPE_FILE_KEY')
 
     def clean_food_name(self, food_name):
         food_name = food_name.lower()
