@@ -4,7 +4,7 @@ import json
 
 class RecipeDatabaseHandler:
     def __init__(self):
-        self.db_path = "recipes.db"
+        self.db_path = "recipes_s3.db"
 
     def clean_food_name(self, food_name):
         food_name = food_name.lower()
