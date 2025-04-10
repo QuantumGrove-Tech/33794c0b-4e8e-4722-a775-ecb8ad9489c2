@@ -1,9 +1,10 @@
 import string
 import sqlite3
+import os
 
 class FoodDatabaseHandler:
     def __init__(self):
-        self.db_path = "food_nutrition_s3.db"
+        self.db_path = os.getenv('FOOD_NUTRITION_FILE_KEY')
 
     def clean_food_name(self, food_name):
         food_name = food_name.lower()
