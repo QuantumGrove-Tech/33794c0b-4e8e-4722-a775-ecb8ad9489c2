@@ -12,14 +12,6 @@ db_handler_recipe = RecipeDatabaseHandler()
 async def health_check():
     return {"status": "ok"}
 
-@app.get("/recipes")
-async def get_all_recipes():
-    try:
-        rows = db_handler_recipe.get_all_recipes()
-        return {"total_rows": len(rows), "rows": rows}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error getting recipes: {e}")
-
 @app.get("/categories")
 async def get_all_categories():
     try:
@@ -60,41 +52,85 @@ async def get_calories_range():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting calories range: {e}")
 
-@app.get("/recipes_filter")
-async def recipes_filter(
+@app.get("/recipes_filter_paginated")
+async def recipes_filter_paginated(
     category: Optional[str] = Query(None, description="Filter by recipe category"),
     country: Optional[str] = Query(None, description="Filter by country of origin"),
     dietType: Optional[str] = Query(None, description="Filter by diet type"),
     calories_min: Optional[int] = Query(None, ge=0, description="Minimum calorie count"),
     calories_max: Optional[int] = Query(None, ge=0, description="Maximum calorie count"),
     time_min: Optional[int] = Query(None, ge=0, description="Minimum cooking time in minutes"),
-    time_max: Optional[int] = Query(None, ge=0, description="Maximum cooking time in minutes")
+    time_max: Optional[int] = Query(None, ge=0, description="Maximum cooking time in minutes"),
+    page: int = Query(1, ge=1, description="Page number (min 1)"),
+    results_per_page: int = Query(10, ge=1, le=100, description="Results per page (1-100)")
 ):
-    filters = {}
-    if category:
-        filters["category"] = category
-    if country:
-        filters["country"] = country
-    if dietType:
-        filters["dietType"] = dietType
-    if calories_min is not None:
-        filters["calories_min"] = calories_min
-    if calories_max is not None:
-        filters["calories_max"] = calories_max
-    if time_min is not None:
-        filters["time_min"] = time_min
-    if time_max is not None:
-        filters["time_max"] = time_max
-
+    filters = {k: v for k, v in locals().items() if k not in ["page", "results_per_page"] and v is not None}
+    
     try:
-        results = db_handler_recipe.get_filtered_recipes(filters)
+        result = db_handler_recipe.get_paginated_filtered_recipes(filters, page, results_per_page)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-    if not results:
+    if not result:
         raise HTTPException(status_code=404, detail="No recipes found matching the filters")
+    return result
+
+@app.get("/recipes_by_diet_types")
+async def recipes_by_diet_types(
+    limit: int = Query(10, ge=1, le=50, description="Max recipes per diet type (1-50)")
+):
+    try:
+        result = db_handler_recipe.get_unique_recipes_by_diet_types(limit)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     
-    return results
+    if not result:
+        raise HTTPException(status_code=404, detail="No recipes found for any diet type")
+    return result
+
+@app.get("/recipes_all")
+async def recipes_all(
+    page: int = Query(1, ge=1, description="Page number (min 1)"),
+    results_per_page: int = Query(10, ge=1, le=100, description="Results per page (1-100)")
+):
+    try:
+        result = db_handler_recipe.get_paginated_all_recipes(page, results_per_page)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="No recipes found")
+    return result
+
+@app.get("/recipes/search")
+async def search_recipes(
+    recipe_name: str = Query(..., description="Recipe name to search for"),
+    page: int = Query(1, ge=1, description="Page number (min 1)"),
+    results_per_page: int = Query(10, ge=1, le=100, description="Results per page (1-100)")
+):
+    try:
+        result = db_handler_recipe.get_paginated_recipe(recipe_name, page, results_per_page)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    if not result:
+        raise HTTPException(status_code=404, detail=f"No recipes found matching '{recipe_name}'")
+    return result
+
+@app.get("/recipes/{recipe_id}")
+async def get_recipe(
+    recipe_id: Optional[int] = Query(default=None, description="ID of the recipe to retrieve")
+):
+    if recipe_id is None:
+        return None 
+    try:
+        recipe = db_handler_recipe.get_recipe_by_id(recipe_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    if not recipe:
+        raise HTTPException(status_code=404, detail=f"Recipe with ID {recipe_id} not found")
+    return recipe[0]  # Return single recipe object instead of list
 
 @app.get("/search_food_paging")
 async def search_food_paging(
