@@ -60,31 +60,5 @@ def download_db(state=None):
         shutdown_system()
         sys.exit(1)
 
-
-# def download_db(state = None):
-#     aws_access_key = get_env_var('AWS_A_Key')
-#     aws_secret_key = get_env_var('AWS_S_Key')
-#     aws_region = get_env_var('AWS_Region')
-
-#     bucket_name = get_env_var('BUCKET_NAME')
-#     food_nutrition_file_key = get_env_var('FOOD_NUTRITION_FILE_KEY')
-#     recipe_file_key = get_env_var('RECIPE_FILE_KEY')
-
-#     try:
-#         session = boto3.Session(
-#             aws_access_key_id=aws_access_key,
-#             aws_secret_access_key=aws_secret_key,
-#             region_name=aws_region
-#         )
-#         s3_client = session.client('s3')
-
-#         download_file_from_s3(s3_client, bucket_name, food_nutrition_file_key)
-#         download_file_from_s3(s3_client, bucket_name, recipe_file_key)
-
-#     except Exception as e:
-#         logging.exception("An unexpected error occurred during file download.")
-#         shutdown_system()
-#         sys.exit(1)
-
 if __name__ == "__main__":
     pass
